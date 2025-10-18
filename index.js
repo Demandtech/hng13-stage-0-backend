@@ -3,12 +3,11 @@ import http from "http";
 const rateLimitMap = new Map();
 
 const PORT = process.env.PORT || 3000;
-const RATE_LIMIT_WINDOW = 60 * 1000; 
-const MAX_REQUESTS = 5; 
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const MAX_REQUESTS = 5;
 
 const server = http.createServer(async (req, res) => {
   const start = Date.now();
-
 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -30,7 +29,11 @@ const server = http.createServer(async (req, res) => {
       entry.count++;
       if (entry.count > MAX_REQUESTS) {
         res.writeHead(429, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "Too many requests. Please try again later." }));
+        res.end(
+          JSON.stringify({
+            message: "Too many requests. Please try again later.",
+          })
+        );
 
         logRequest(req, 429, start);
         return;
@@ -40,8 +43,19 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
- 
-  if (req.url === "/me" && req.method === "GET") {
+  if( req.url === "/" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        message: "Welcome to Rasheed Adekunle's stage 0 task",
+        routes: {
+          "/me": "GET - Get user information along with a random cat fact",
+        },
+      })
+    );
+    logRequest(req, 200, start);
+  }
+  else if (req.url === "/me" && req.method === "GET") {
     try {
       const response = await fetch("https://catfact.ninja/fact");
       const data = await response.json();
@@ -55,7 +69,7 @@ const server = http.createServer(async (req, res) => {
           user: {
             email: "rasheedadekunle91@gmail.com",
             name: "Rasheed Adekunle",
-            stack: "Expressjs (Node.js)",
+            stack: "Expressjs/Node.js",
           },
           timestamp: new Date().toISOString(),
           fact: data.fact,
@@ -75,11 +89,15 @@ const server = http.createServer(async (req, res) => {
     }
   } else {
     res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("Not Found");
+    res.end(
+      JSON.stringify({
+        message: req.url + " not found",
+        error: "Route does not exist",
+      })
+    );
     logRequest(req, 404, start);
   }
 });
-
 
 function logRequest(req, statusCode, startTime) {
   const duration = Date.now() - startTime;
@@ -87,17 +105,18 @@ function logRequest(req, statusCode, startTime) {
   const statusColor = getStatusColor(statusCode);
 
   console.log(
-    `${method} ${req.url} - ${new Date().toISOString()} → ${statusColor}${statusCode}\x1b[0m (${duration}ms)`
+    `${method} ${
+      req.url
+    } - ${new Date().toISOString()} → ${statusColor}${statusCode}\x1b[0m (${duration}ms)`
   );
 }
 
-
 function getStatusColor(status) {
-  if (status >= 500) return "\x1b[31m"; 
-  if (status >= 400) return "\x1b[33m"; 
+  if (status >= 500) return "\x1b[31m";
+  if (status >= 400) return "\x1b[33m";
   if (status >= 300) return "\x1b[36m";
-  if (status >= 200) return "\x1b[32m"; 
-  return "\x1b[0m"; 
+  if (status >= 200) return "\x1b[32m";
+  return "\x1b[0m";
 }
 
 server.listen(PORT, () => {
